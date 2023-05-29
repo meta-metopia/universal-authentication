@@ -1,5 +1,4 @@
 import { PasswordlessServerService } from "@/services/Passwordless.service.server";
-import { NextResponse } from "next/server";
 
 export const runtime = "edge";
 

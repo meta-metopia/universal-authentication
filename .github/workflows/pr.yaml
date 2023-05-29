@@ -1,0 +1,66 @@
+name: Preview
+on:
+  - pull_request
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        name: Building project
+      - uses: amondnet/vercel-action@v25 #deploy
+        id: vercel
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.ORG_ID}}
+          vercel-project-id: ${{ secrets.PROJECT_ID}}
+          scope: ${{secrets.SCOPE}}
+          comment: false
+      - uses: mshick/add-pr-comment@v2
+        with:
+          message-id: preview-url
+          message: |
+            | Preview Name | Preview URL |
+            | --- | --- |
+            | ${{ steps.vercel.outputs.preview-name }} | ${{ steps.vercel.outputs.preview-url }} |
+  run-linters:
+    name: Run linters
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2.2.4
+        with:
+          version: 7.29.0
+      - name: Install dependencies
+        run: pnpm install
+      - name: Run eslint
+        run: pnpm lint
+      - name: Run linters
+        uses: wearerequired/lint-action@v2
+        with:
+          prettier: true
+  outdated-labeler:
+    runs-on: ubuntu-latest
+    name: Dependencies outdater
+    steps:
+      - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 6.32.9
+      - name: Dependencies Outdater
+        uses: action-runner/dependencies-outdater@master
+        with:
+          access_token: ${{ secrets.RELEASE_TOKEN }}
+          package_manager: pnpm
+      - name: label
+        uses: action-runner/conventional-labeler@master
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
