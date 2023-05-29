@@ -17,6 +17,10 @@ jobs:
           cache: "pnpm"
       - run: pnpm install
       - run: pnpm build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          REDIS_TOKEN: ${{ secrets.REDIS_TOKEN }}
 
   create-release:
     runs-on: ubuntu-latest
