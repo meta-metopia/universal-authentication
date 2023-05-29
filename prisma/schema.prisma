@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model Domain {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+  User User[]
+}
+
+model User {
+  id         Int         @id @default(autoincrement())
+  username   String
+  domainId   Int
+  domain     Domain      @relation(fields: [domainId], references: [id])
+  Credential Credential?
+
+  @@index([domainId])
+}
+
+model Credential {
+  id        String @id // Unique identifier for the credential
+  publicKey String // Public key used for authentication
+  algorithm String // Algorithm used for authentication
+  userId    Int    @unique // Foreign key to the User model
+  user      User   @relation(fields: [userId], references: [id]) // Relation to the User model
+
+  @@index([userId])
+}
