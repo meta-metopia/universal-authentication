@@ -12,6 +12,9 @@ export function Post() {
       if (result instanceof NextResponse) {
         return result;
       }
+      if (result === undefined) {
+        return NextResponse.json({}, { status: 200 });
+      }
       return NextResponse.json(result, { status: 201 });
     };
     return descriptor;
@@ -27,10 +30,13 @@ export function Get() {
     const originalMethod = descriptor.value;
     descriptor.value = async function (...args: any[]) {
       const result = await originalMethod.apply(this, args);
-      // if (result instanceof NextResponse) {
-      //   return result;
-      // }
-      // return NextResponse.json(result, { status: 200 });
+      if (result instanceof NextResponse) {
+        return result;
+      }
+      if (result === undefined) {
+        return NextResponse.json({}, { status: 200 });
+      }
+      return NextResponse.json(result, { status: 200 });
     };
     return descriptor;
   };

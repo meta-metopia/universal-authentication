@@ -1,0 +1,60 @@
+name: Playwright Tests
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis
+        ports:
+          - "6379:6379"
+      serverless-redis-http:
+        ports:
+          - "8079:80"
+        image: hiett/serverless-redis-http:latest
+        env:
+          SRH_MODE: env
+          SRH_TOKEN: example_token
+          SRH_CONNECTION_STRING: "redis://redis:6379"
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: db
+          MYSQL_USER: user
+          MYSQL_PASSWORD: password
+          MYSQL_ROOT_PASSWORD: password
+        ports:
+          - "3306:3306"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8.3.0
+      - name: Install dependencies
+        run: pnpm install
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps
+      - name: Start dev server in background
+        run: pnpm dev &
+        env:
+          DATABASE_URL: "mysql://root:password@localhost:3306/db"
+          REDIS_URL: "http://localhost:8079"
+          REDIS_TOKEN: "example_token"
+      - name: Run Playwright tests
+        run: pnpm exec playwright test
+        env:
+          url: http://localhost:3000
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30

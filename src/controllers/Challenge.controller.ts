@@ -1,5 +1,5 @@
 import { Post } from "@/decorators/nextresponse.decorator";
-import { PasswordlessServerService } from "@/services/Passwordless.service.server";
+import { ChallengeService } from "@/services/Challenge.service.server";
 
 export class ChallengeController {
   @Post()
@@ -9,7 +9,7 @@ export class ChallengeController {
     const userId: any = searchParams.get("userId");
     const type: any = searchParams.get("type");
 
-    return PasswordlessServerService.getChallenge({
+    return new ChallengeService().getChallenge({
       type,
       userId,
       domain,
