@@ -31,7 +31,7 @@ export class PasswordlessServerService {
 
     if (await redis.exists(key)) {
       const data = await redis.get(key);
-      return NextResponse.json(GetChallengeResponseSchema.parse(data));
+      return GetChallengeResponseSchema.parse(data);
     }
 
     const challenge = v1();
@@ -42,6 +42,6 @@ export class PasswordlessServerService {
     await redis.set(key, JSON.stringify(response));
     await redis.expire(key, Config.defaultChallengeExpiration);
 
-    return NextResponse.json(response);
+    return response;
   }
 }

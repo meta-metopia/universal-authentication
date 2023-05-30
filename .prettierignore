@@ -1,3 +1,4 @@
 .next
 *.js
 pnpm-lock.yaml
+!jest.setup.js

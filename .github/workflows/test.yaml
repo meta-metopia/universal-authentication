@@ -21,6 +21,12 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           REDIS_URL: ${{ secrets.REDIS_URL }}
           REDIS_TOKEN: ${{ secrets.REDIS_TOKEN }}
+      - uses: jwalton/gh-find-current-pr@v1
+        id: findPr
+      - uses: ArtiomTr/jest-coverage-report-action@v2
+        with:
+          package-manager: pnpm
+          prnumber: ${{ steps.findPr.outputs.number }}
 
   create-release:
     runs-on: ubuntu-latest

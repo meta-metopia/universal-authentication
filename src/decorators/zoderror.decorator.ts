@@ -10,10 +10,8 @@ export function CatchZodError() {
     const originalMethod = descriptor.value;
     descriptor.value = async function (...args: any[]) {
       try {
-        console.log("args", args);
         return await originalMethod.apply(this, args);
       } catch (error) {
-        console.log("error", error);
         if (error instanceof ZodError) {
           return NextResponse.json({ error: error.message }, { status: 400 });
         }
