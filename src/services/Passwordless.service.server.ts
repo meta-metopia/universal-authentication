@@ -6,20 +6,12 @@ import dayjs from "dayjs";
 import { NextResponse } from "next/server";
 import { v1 } from "uuid";
 import { z } from "zod";
-import { DatabaseService } from "./Database.service.server";
+import {
+  DatabaseService,
+  DatabaseServiceInterface,
+} from "./Database.service.server";
 import { KeySchema, KvService } from "./Kv.service.server";
 import { WebauthnService } from "./Webauthn.service.server";
-
-const GetChallengeParamsSchema = z.object({
-  type: KeySchema,
-  userId: z.string(),
-  domain: z.string(),
-});
-
-const GetChallengeResponseSchema = z.object({
-  challenge: z.string(),
-  expiresAt: z.union([z.date(), z.string()]),
-});
 
 const PostSignupParams = z.object({
   username: z.string(),
@@ -35,38 +27,9 @@ const PostSignupParams = z.object({
 
 export class PasswordlessServerService {
   constructor(
-    private readonly databaseService: DatabaseService = new DatabaseService(),
+    private readonly databaseService: DatabaseServiceInterface = new DatabaseService(),
     private readonly webauthnService: WebauthnService = new WebauthnService()
   ) {}
-
-  @CatchZodError()
-  @ValidateParams(GetChallengeParamsSchema)
-  async getChallenge({
-    type,
-    userId,
-    domain,
-  }: z.infer<typeof GetChallengeParamsSchema>) {
-    const key = KvService.getKey({
-      type,
-      userId,
-      domain,
-    });
-
-    if (await redis.exists(key)) {
-      const data = await redis.get(key);
-      return GetChallengeResponseSchema.parse(data);
-    }
-
-    const challenge = v1();
-    const expiresAt = dayjs()
-      .add(Config.defaultChallengeExpiration, "second")
-      .toDate();
-    const response = GetChallengeResponseSchema.parse({ challenge, expiresAt });
-    await redis.set(key, JSON.stringify(response));
-    await redis.expire(key, Config.defaultChallengeExpiration);
-
-    return response;
-  }
 
   @CatchZodError()
   @ValidateParams(PostSignupParams)
