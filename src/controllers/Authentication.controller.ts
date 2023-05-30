@@ -8,7 +8,7 @@ export class AuthenticationController {
     const domain: any = origin.replace(/^https?:\/\//, "");
     const body = await request.json();
 
-    return PasswordlessServerService.signup({
+    return new PasswordlessServerService().signup({
       ...body,
       domain,
     });

@@ -9,7 +9,6 @@ export function Post() {
     const originalMethod = descriptor.value;
     descriptor.value = async function (...args: any[]) {
       const result = await originalMethod.apply(this, args);
-      console.log("result", result);
       if (result instanceof NextResponse) {
         return result;
       }

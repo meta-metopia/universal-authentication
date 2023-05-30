@@ -9,7 +9,7 @@ export class ChallengeController {
     const userId: any = searchParams.get("userId");
     const type: any = searchParams.get("type");
 
-    return PasswordlessServerService.getChallenge({
+    return new PasswordlessServerService().getChallenge({
       type,
       userId,
       domain,

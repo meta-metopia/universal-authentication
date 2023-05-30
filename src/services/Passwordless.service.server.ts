@@ -1,14 +1,14 @@
-import { z } from "zod";
-import { KeySchema, KvService } from "./Kv.service.server";
-import { redis } from "@/db/redis";
-import dayjs from "dayjs";
-import { v1 } from "uuid";
 import { Config } from "@/config";
+import { redis } from "@/db/redis";
 import { CatchZodError } from "@/decorators/zoderror.decorator";
-import { NextResponse } from "next/server";
 import { ValidateParams } from "@/decorators/zodparam.decorator";
-import { server } from "@passwordless-id/webauthn";
-import { prisma } from "@/db/prisma";
+import dayjs from "dayjs";
+import { NextResponse } from "next/server";
+import { v1 } from "uuid";
+import { z } from "zod";
+import { DatabaseService } from "./Database.service.server";
+import { KeySchema, KvService } from "./Kv.service.server";
+import { WebauthnService } from "./Webauthn.service.server";
 
 const GetChallengeParamsSchema = z.object({
   type: KeySchema,
@@ -34,9 +34,14 @@ const PostSignupParams = z.object({
 });
 
 export class PasswordlessServerService {
+  constructor(
+    private readonly databaseService: DatabaseService = new DatabaseService(),
+    private readonly webauthnService: WebauthnService = new WebauthnService()
+  ) {}
+
   @CatchZodError()
   @ValidateParams(GetChallengeParamsSchema)
-  static async getChallenge({
+  async getChallenge({
     type,
     userId,
     domain,
@@ -65,7 +70,7 @@ export class PasswordlessServerService {
 
   @CatchZodError()
   @ValidateParams(PostSignupParams)
-  static async signup(registration: z.infer<typeof PostSignupParams>) {
+  async signup(registration: z.infer<typeof PostSignupParams>) {
     const key = KvService.getKey({
       type: "registration",
       userId: registration.username,
@@ -98,7 +103,7 @@ export class PasswordlessServerService {
       throw e;
     }
 
-    const registrationResult = await server.verifyRegistration(
+    const registrationResult = await this.webauthnService.verifyRegistration(
       {
         username: registration.username,
         credential: registration.credential,
@@ -111,22 +116,16 @@ export class PasswordlessServerService {
       }
     );
 
-    const createdUser = await prisma.user.create({
-      data: {
-        username: registration.username,
-        domain: {
-          connect: {
-            name: registration.domain,
-          },
-        },
-        Credential: {
-          create: {
-            id: registrationResult.credential.id,
-            publicKey: registrationResult.credential.publicKey,
-            algorithm: registrationResult.credential.algorithm,
-          },
-        },
+    const createdUser = await this.databaseService.addUser({
+      domain: registration.domain,
+      username: registration.username,
+      credential: {
+        id: registrationResult.credential.id,
+        publicKey: registrationResult.credential.publicKey,
+        algorithm: registrationResult.credential.algorithm,
       },
+      authenticatorData: registration.authenticatorData,
+      clientData: registration.clientData,
     });
 
     return {
