@@ -2,3 +2,6 @@
 *.js
 pnpm-lock.yaml
 !jest.setup.js
+playwright.config.js
+launch.json
+coverage
