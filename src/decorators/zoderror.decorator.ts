@@ -13,7 +13,10 @@ export function CatchZodError() {
         return await originalMethod.apply(this, args);
       } catch (error) {
         if (error instanceof ZodError) {
-          return NextResponse.json({ error: error.message }, { status: 400 });
+          return NextResponse.json(
+            { error: error.issues, method: propertyKey },
+            { status: 400 }
+          );
         }
         return NextResponse.json(
           { error: "Something goes wrong" },

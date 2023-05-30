@@ -30,6 +30,9 @@ describe("CatchZodError", () => {
 
     // Assert
     expect(result.status).toBe(400);
+    const body = await result.json();
+    expect(body.error).toHaveLength(1);
+    expect(body.method).toBe(propertyKey);
   });
 
   it("should catch non-ZodError and return a 500 response", async () => {
@@ -48,5 +51,7 @@ describe("CatchZodError", () => {
 
     // Assert
     expect(result.status).toBe(500);
+    const body = await result.json();
+    expect(body.error).toBe("Something goes wrong");
   });
 });

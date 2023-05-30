@@ -1,6 +1,9 @@
 lockfileVersion: '6.0'
 
 dependencies:
+  '@passwordless-id/webauthn':
+    specifier: ^1.2.4
+    version: 1.2.4
   '@prisma/client':
     specifier: 4.14.1
     version: 4.14.1(prisma@4.14.1)
@@ -858,6 +861,10 @@ packages:
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.15.0
+    dev: false
+
+  /@passwordless-id/webauthn@1.2.4:
+    resolution: {integrity: sha512-Efl2BN3EOFdyQWOHMa0xJrSCVUeY+k18KcfDM2Tu8WioVeo4WpVLDqApZM0PDjGRWJBaf8jGq/RGNoldVboF0w==}
     dev: false
 
   /@pkgr/utils@2.4.1:

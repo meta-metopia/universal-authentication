@@ -11,6 +11,7 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@passwordless-id/webauthn": "^1.2.4",
     "@prisma/client": "4.14.1",
     "@types/node": "20.2.5",
     "@types/react": "18.2.7",
