@@ -24,7 +24,7 @@ const GetKeyParamsSchema = z.object({
 export interface KvServiceInterface {
   get(key: string): Promise<unknown>;
   set(key: string, value: string): Promise<void>;
-  delete(key: string): Promise<void>;
+  del(key: string): Promise<void>;
   exists(key: string): Promise<number>;
   expire(key: string, seconds: number): Promise<void>;
 }
@@ -53,7 +53,7 @@ export class KvService implements KvServiceInterface {
     await redis.set(key, value);
   }
 
-  async delete(key: string) {
+  async del(key: string) {
     await redis.del(key);
   }
 

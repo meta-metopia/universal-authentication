@@ -1,10 +1,8 @@
 /**
  * @jest-environment node
  */
-import { KvService } from "common";
+import { KvService } from "service";
 import { ChallengeService } from "./Challenge.service.server";
-
-jest.mock("common");
 
 describe("ChallengeService", () => {
   let challengeService: ChallengeService;

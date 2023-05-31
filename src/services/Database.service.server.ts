@@ -1,5 +1,5 @@
 import { prisma } from "@/db/prisma";
-import { ValidateParams } from "common";
+import { ValidateParams } from "utils";
 import { z } from "zod";
 
 const AddUserSchema = z.object({

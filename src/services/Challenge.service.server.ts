@@ -1,10 +1,10 @@
 import { Config } from "@/config";
 import { CatchZodError } from "@/decorators/zoderror.decorator";
-import { KvServiceInterface, ValidateParams } from "common";
+import { ValidateParams } from "utils";
 import dayjs from "dayjs";
+import { KeySchema, KvService, KvServiceInterface } from "service";
 import { v1 } from "uuid";
 import { z } from "zod";
-import { KeySchema, KvService } from "common";
 
 const GetChallengeParamsSchema = z.object({
   type: KeySchema,

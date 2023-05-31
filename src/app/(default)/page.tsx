@@ -7,7 +7,7 @@ import Tasks from "@/components/Tasks";
 
 export default function Home() {
   return (
-    <main className="max-w-3xl mx-auto mt-20 space-y-5">
+    <main className="max-w-3xl mx-auto mt-20 space-y-5 mb-20 p-10 md:p-0">
       <article className="prose lg:prose-xl">
         <h1>Welcome to Universal Authentication interactive demo!</h1>
         <p className="font-light">
@@ -32,7 +32,6 @@ export default function Home() {
         </blockquote>
       </article>
       <RegisterArea />
-
       <Divider />
     </main>
   );

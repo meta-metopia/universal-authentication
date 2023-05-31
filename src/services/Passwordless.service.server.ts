@@ -1,16 +1,12 @@
-import { Config } from "@/config";
-import { redis } from "@/db/redis";
 import { CatchZodError } from "@/decorators/zoderror.decorator";
-import { ValidateParams } from "@/decorators/zodparam.decorator";
-import dayjs from "dayjs";
+import { ValidateParams } from "utils";
 import { NextResponse } from "next/server";
-import { v1 } from "uuid";
+import { KvService } from "service";
 import { z } from "zod";
 import {
   DatabaseService,
   DatabaseServiceInterface,
 } from "./Database.service.server";
-import { KeySchema, KvService } from "./Kv.service.server";
 import { WebauthnService } from "./Webauthn.service.server";
 
 const PostSignupParams = z.object({
@@ -28,7 +24,8 @@ const PostSignupParams = z.object({
 export class PasswordlessServerService {
   constructor(
     private readonly databaseService: DatabaseServiceInterface = new DatabaseService(),
-    private readonly webauthnService: WebauthnService = new WebauthnService()
+    private readonly webauthnService: WebauthnService = new WebauthnService(),
+    private readonly kvService: KvService = new KvService()
   ) {}
 
   @CatchZodError()
@@ -39,7 +36,7 @@ export class PasswordlessServerService {
       userId: registration.username,
       domain: registration.domain,
     });
-    if (!redis.exists(key)) {
+    if (!this.kvService.exists(key)) {
       return NextResponse.json(
         {
           error: "No registration session found",
@@ -50,7 +47,7 @@ export class PasswordlessServerService {
       );
     }
 
-    const storedSession = await redis.get(key);
+    const storedSession = await this.kvService.get(key);
     const sessionSchema = z.object({
       challenge: z.string({ description: "The challenge string" }),
     });
@@ -62,7 +59,7 @@ export class PasswordlessServerService {
     try {
       session = sessionSchema.parse(storedSession);
     } catch (e) {
-      await redis.del(key);
+      await this.kvService.del(key);
       throw e;
     }
 
