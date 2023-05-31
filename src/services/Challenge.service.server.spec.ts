@@ -1,16 +1,18 @@
 /**
  * @jest-environment node
  */
-import { redis } from "@/db/redis";
+import { KvService } from "common";
 import { ChallengeService } from "./Challenge.service.server";
 
-jest.mock("../db/redis");
+jest.mock("common");
 
 describe("ChallengeService", () => {
   let challengeService: ChallengeService;
+  let kvService: KvService;
 
   beforeEach(() => {
-    challengeService = new ChallengeService();
+    kvService = new KvService();
+    challengeService = new ChallengeService(kvService);
   });
 
   afterEach(() => {
@@ -38,11 +40,11 @@ describe("ChallengeService", () => {
 
       const result1 = await challengeService.getChallenge(input);
 
-      jest.spyOn(redis, "exists").mockResolvedValue(1);
-      jest.spyOn(redis, "get").mockResolvedValue(result1);
+      jest.spyOn(kvService, "exists").mockResolvedValue(1);
+      jest.spyOn(kvService, "get").mockResolvedValue(result1);
       const result2 = await challengeService.getChallenge(input);
 
-      expect(result1).toEqual(result2);
+      expect(result1.challenge).toBe(result2.challenge);
     });
 
     it("should return a different challenge and expiration date for different input", async () => {

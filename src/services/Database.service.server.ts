@@ -1,5 +1,5 @@
 import { prisma } from "@/db/prisma";
-import { ValidateParams } from "@/decorators/zodparam.decorator";
+import { ValidateParams } from "common";
 import { z } from "zod";
 
 const AddUserSchema = z.object({

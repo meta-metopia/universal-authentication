@@ -1,0 +1,24 @@
+{
+  "name": "universal-authentication-sdk",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@passwordless-id/webauthn": "^1.2.4",
+    "axios": "^1.4.0",
+    "common": "workspace:*",
+    "zod": "^3.21.4"
+  },
+  "devDependencies": {
+    "@types/node": "20.2.5",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "5.0.4"
+  }
+}
