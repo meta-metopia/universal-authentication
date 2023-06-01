@@ -18,10 +18,7 @@ export function CatchZodError() {
             { status: 400 }
           );
         }
-        return NextResponse.json(
-          { error: "Something goes wrong" },
-          { status: 500 }
-        );
+        throw error;
       }
     };
 

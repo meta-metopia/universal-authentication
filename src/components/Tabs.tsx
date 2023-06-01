@@ -1,28 +1,14 @@
 import { classNames } from "./classnames";
 
-/*
-  This example requires some changes to your config:
-  
-  ```
-  // tailwind.config.js
-  module.exports = {
-    // ...
-    plugins: [
-      // ...
-      require('@tailwindcss/forms'),
-    ],
-  }
-  ```
-*/
-
 interface Props {
   tabs: {
     name: string;
     current: boolean;
   }[];
+  onSelect: (index: number) => void;
 }
 
-export default function Tabs({ tabs }: Props) {
+export default function Tabs({ tabs, onSelect }: Props) {
   return (
     <div>
       <div className="sm:hidden">
@@ -43,7 +29,7 @@ export default function Tabs({ tabs }: Props) {
       </div>
       <div className="hidden sm:block">
         <nav className="flex space-x-4" aria-label="Tabs">
-          {tabs.map((tab) => (
+          {tabs.map((tab, index) => (
             <button
               key={tab.name}
               className={classNames(
@@ -53,6 +39,9 @@ export default function Tabs({ tabs }: Props) {
                 "rounded-md px-3 py-2 text-sm font-medium"
               )}
               aria-current={tab.current ? "page" : undefined}
+              onClick={() => {
+                onSelect(index);
+              }}
             >
               {tab.name}
             </button>

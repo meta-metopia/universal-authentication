@@ -3,6 +3,9 @@ import { z } from "zod";
 import axios from "axios";
 
 export class WebauthnClientService {
+  static sendSignUp(username: string) {
+    throw new Error("Method not implemented.");
+  }
   @ValidateParams([z.string()])
   static async getChallenge(username: string) {
     try {
@@ -27,17 +30,18 @@ export class WebauthnClientService {
     }
   }
 
-  static async register(username: string, credential: any) {
-    const response = await axios.post("/api/auth/register", {
-      username,
-      credential,
-    });
-
-    return z
-      .object({
-        id: z.string(),
-        error: z.string().optional(),
-      })
-      .parse(response.data);
+  static async register(data: any) {
+    try {
+      console.log("data", data);
+      const response = await axios.post("/api/auth/signup", data);
+      return {
+        id: response.data.id,
+      };
+    } catch (err) {
+      return {
+        id: "",
+        error: `Error: ${err}`,
+      };
+    }
   }
 }

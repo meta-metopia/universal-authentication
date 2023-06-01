@@ -2,6 +2,7 @@
 
 import Card from "@/components/Card";
 import { ContainedLoadingButton } from "@/components/LoadingButtons";
+import RegistrationDiagram from "@/components/RegistrationDiagram";
 import Tabs from "@/components/Tabs";
 import Tasks from "@/components/Tasks";
 import TextField from "@/components/TextField";
@@ -20,6 +21,7 @@ export default function RegisterArea() {
       subContent?: string;
     }[]
   >([]);
+  const [selection, setSelection] = useState(0);
 
   const register = useCallback(async () => {
     setLoading(true);
@@ -27,7 +29,19 @@ export default function RegisterArea() {
       .signUp(
         {
           username: username,
-          onSendSignUp: async () => ({ id: "", error: undefined }),
+          onSendSignUp: async (credential) => {
+            const result = await WebauthnClientService.register(credential);
+            if (!result.error) {
+              timeline.push({
+                content: "credential-sent",
+                type: "progress",
+                time: new Date().toLocaleTimeString(),
+                subContent: `Server side id: ${result.id} for ${username}`,
+              });
+              setTimeline(JSON.parse(JSON.stringify(timeline)));
+            }
+            return result;
+          },
           challenge: async () => {
             const result = await WebauthnClientService.getChallenge(username);
             if (!result.error) {
@@ -83,24 +97,26 @@ export default function RegisterArea() {
         tabs={[
           {
             name: "Timeline",
-            current: true,
+            current: selection === 0,
           },
           {
             name: "Diagram",
-            current: false,
+            current: selection === 1,
           },
         ]}
+        onSelect={(index) => setSelection(index)}
       />
 
       <div className="bg-sky-200 p-5 rounded-xl text-sky-800">
         You can choose to use the timeline or the diagram to view the
         registration process.
       </div>
-      {timeline.length > 0 && (
+      {timeline.length > 0 && selection === 0 && (
         <Card>
           <Tasks timeline={timeline} clearTimeline={() => setTimeline([])} />
         </Card>
       )}
+      {selection === 1 && <RegistrationDiagram />}
     </div>
   );
 }

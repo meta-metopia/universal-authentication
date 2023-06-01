@@ -36,6 +36,10 @@ const SignupParamsSchema = z.object({
       })
     )
   ),
+  authenticatorType: z
+    .enum(["auto", "local", "extern", "roaming", "both"])
+    .optional(),
+  userVerification: z.enum(["discouraged", "preferred", "required"]).optional(),
 });
 
 type SignupResponse = z.infer<typeof SignupResponseSchema>;
@@ -43,7 +47,13 @@ type SignupResponse = z.infer<typeof SignupResponseSchema>;
 export class WebAuthnAuthentication implements AuthenticationInterface {
   @ValidateParams([SignupParamsSchema, OnSignUpSchema])
   async signUp(
-    { username, challenge, onSendSignUp }: z.infer<typeof SignupParamsSchema>,
+    {
+      username,
+      challenge,
+      onSendSignUp,
+      authenticatorType,
+      userVerification,
+    }: z.infer<typeof SignupParamsSchema>,
     onSignUp: (args_0: {
       status: "error" | "progress" | "success";
       message: string;
@@ -51,12 +61,12 @@ export class WebAuthnAuthentication implements AuthenticationInterface {
     }) => Promise<void>
   ): Promise<{ id: string }> {
     await onSignUp({
-      message: "start-generating-challenge",
+      message: "start-generating-challenge-request",
       status: "progress",
     });
     const challengeString = await challenge(username);
     await onSignUp({
-      message: `end-generating-challenge`,
+      message: `end-generating-challenge-request`,
       status: "progress",
     });
 
@@ -76,6 +86,8 @@ export class WebAuthnAuthentication implements AuthenticationInterface {
     const { registration, error } = await this.register({
       challenge: challengeString.challenge,
       username,
+      authenticatorType,
+      userVerification,
     });
 
     if (error) {
@@ -97,7 +109,7 @@ export class WebAuthnAuthentication implements AuthenticationInterface {
       status: "progress",
     });
     const response = await onSendSignUp({
-      credential: registration!.credential,
+      ...registration,
       username,
     });
     if (response.error) {
@@ -122,12 +134,20 @@ export class WebAuthnAuthentication implements AuthenticationInterface {
   private async register({
     challenge,
     username,
+    authenticatorType,
+    userVerification,
   }: {
     challenge: string;
     username: string;
+    authenticatorType?: any;
+    userVerification?: "discouraged" | "preferred" | "required";
   }) {
+    console.log("Authenticator Type", authenticatorType);
     try {
-      const registration = await client.register(username, challenge);
+      const registration = await client.register(username, challenge, {
+        userVerification,
+        authenticatorType,
+      });
       return { registration, error: null };
     } catch (err) {
       return { registration: null, error: err };
