@@ -1,0 +1,1 @@
+global.redis = jest.fn();

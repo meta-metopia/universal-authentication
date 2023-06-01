@@ -1,5 +1,5 @@
 import { prisma } from "@/db/prisma";
-import { ValidateParams } from "@/decorators/zodparam.decorator";
+import { ValidateParams } from "utils";
 import { z } from "zod";
 
 const AddUserSchema = z.object({
@@ -21,26 +21,33 @@ export interface DatabaseServiceInterface {
 export class DatabaseService implements DatabaseServiceInterface {
   @ValidateParams(AddUserSchema)
   async addUser(user: z.infer<typeof AddUserSchema>) {
-    const createdUser = await prisma.user.create({
-      data: {
-        username: user.username,
-        domain: {
-          connect: {
-            name: user.domain,
+    try {
+      const createdUser = await prisma.user.create({
+        data: {
+          username: user.username,
+          domain: {
+            connect: {
+              name: user.domain,
+            },
+          },
+          Credential: {
+            create: {
+              id: user.credential.id,
+              publicKey: user.credential.publicKey,
+              algorithm: user.credential.algorithm,
+            },
           },
         },
-        Credential: {
-          create: {
-            id: user.credential.id,
-            publicKey: user.credential.publicKey,
-            algorithm: user.credential.algorithm,
-          },
-        },
-      },
-    });
+      });
 
-    return {
-      id: createdUser.id,
-    };
+      return {
+        id: createdUser.id,
+      };
+    } catch (e: any) {
+      if (e.code === "P2025") {
+        throw new Error("Domain does not exist");
+      }
+      throw e;
+    }
   }
 }

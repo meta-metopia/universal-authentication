@@ -4,13 +4,15 @@ import { PasswordlessServerService } from "@/services/Passwordless.service.serve
 export class AuthenticationController {
   @Post()
   static async signUp(request: Request) {
-    const { searchParams, origin } = new URL(request.url);
-    const domain: any = origin.replace(/^https?:\/\//, "");
+    const { origin } = new URL(request.url);
+    const domain: any = origin;
     const body = await request.json();
 
-    return new PasswordlessServerService().signup({
+    const param = {
       ...body,
       domain,
-    });
+    };
+
+    return new PasswordlessServerService().signup(param);
   }
 }

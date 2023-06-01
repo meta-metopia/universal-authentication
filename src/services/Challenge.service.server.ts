@@ -1,11 +1,10 @@
 import { Config } from "@/config";
-import { redis } from "@/db/redis";
 import { CatchZodError } from "@/decorators/zoderror.decorator";
-import { ValidateParams } from "@/decorators/zodparam.decorator";
+import { ValidateParams } from "utils";
 import dayjs from "dayjs";
+import { KeySchema, KvService, KvServiceInterface } from "service";
 import { v1 } from "uuid";
 import { z } from "zod";
-import { KeySchema, KvService } from "./Kv.service.server";
 
 const GetChallengeParamsSchema = z.object({
   type: KeySchema,
@@ -19,6 +18,10 @@ const GetChallengeResponseSchema = z.object({
 });
 
 export class ChallengeService {
+  constructor(
+    private readonly kvService: KvServiceInterface = new KvService()
+  ) {}
+
   @CatchZodError()
   @ValidateParams(GetChallengeParamsSchema)
   async getChallenge({
@@ -32,8 +35,9 @@ export class ChallengeService {
       domain,
     });
 
-    if (await redis.exists(key)) {
-      const data = await redis.get(key);
+    const exists = await this.kvService.exists(key);
+    if (await this.kvService.exists(key)) {
+      const data = await this.kvService.get(key);
       return GetChallengeResponseSchema.parse(data);
     }
 
@@ -42,8 +46,8 @@ export class ChallengeService {
       .add(Config.defaultChallengeExpiration, "second")
       .toDate();
     const response = GetChallengeResponseSchema.parse({ challenge, expiresAt });
-    await redis.set(key, JSON.stringify(response));
-    await redis.expire(key, Config.defaultChallengeExpiration);
+    await this.kvService.set(key, JSON.stringify(response));
+    await this.kvService.expire(key, Config.defaultChallengeExpiration);
 
     return response;
   }

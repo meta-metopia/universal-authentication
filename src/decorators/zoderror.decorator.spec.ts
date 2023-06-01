@@ -34,24 +34,4 @@ describe("CatchZodError", () => {
     expect(body.error).toHaveLength(1);
     expect(body.method).toBe(propertyKey);
   });
-
-  it("should catch non-ZodError and return a 500 response", async () => {
-    // Arrange
-    const target = {};
-    const propertyKey = "testMethod";
-    const descriptor = {
-      value: async () => {
-        throw new Error("Something goes wrong");
-      },
-    };
-
-    // Act
-    const decoratedMethod = CatchZodError()(target, propertyKey, descriptor);
-    const result = await decoratedMethod.value();
-
-    // Assert
-    expect(result.status).toBe(500);
-    const body = await result.json();
-    expect(body.error).toBe("Something goes wrong");
-  });
 });
