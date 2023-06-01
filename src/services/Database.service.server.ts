@@ -14,8 +14,29 @@ const AddUserSchema = z.object({
   domain: z.string(),
 });
 
+const GetUserSchema = z.object({
+  id: z.number(),
+  username: z.string(),
+  domain: z
+    .object({
+      name: z.string(),
+    })
+    .optional(),
+  Credential: z
+    .object({
+      id: z.string(),
+      publicKey: z.string(),
+      algorithm: z.enum(["RS256", "ES256"]),
+    })
+    .nullish(),
+});
+
 export interface DatabaseServiceInterface {
   addUser: (user: z.infer<typeof AddUserSchema>) => Promise<{ id: number }>;
+  getUser: (
+    username: string,
+    domain: string
+  ) => Promise<z.infer<typeof GetUserSchema>>;
 }
 
 export class DatabaseService implements DatabaseServiceInterface {
@@ -49,5 +70,25 @@ export class DatabaseService implements DatabaseServiceInterface {
       }
       throw e;
     }
+  }
+
+  @ValidateParams([z.string(), z.string()])
+  async getUser(username: string, domain: string) {
+    const user = await prisma.user.findFirst({
+      where: {
+        username,
+        domain: {
+          name: domain,
+        },
+      },
+      include: {
+        Credential: true,
+        domain: true,
+      },
+    });
+    if (!user) {
+      throw new Error("User not found");
+    }
+    return user as any;
   }
 }

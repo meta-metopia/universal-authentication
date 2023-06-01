@@ -36,6 +36,7 @@
     "service": "workspace:*",
     "tailwindcss": "3.3.2",
     "typescript": "5.0.4",
+    "uid": "^2.0.2",
     "universal-authentication-sdk": "workspace:*",
     "utils": "workspace:*",
     "uuid": "^9.0.0",

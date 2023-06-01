@@ -8,6 +8,7 @@ import {
   DatabaseServiceInterface,
 } from "./Database.service.server";
 import { WebauthnService } from "./Webauthn.service.server";
+import { uid } from "uid";
 
 const PostSignupParams = z.object({
   username: z.string(),
@@ -18,6 +19,15 @@ const PostSignupParams = z.object({
   }),
   authenticatorData: z.string(),
   clientData: z.string(),
+  domain: z.string(),
+});
+
+const GetSigninParams = z.object({
+  username: z.string(),
+  credential: z.string(),
+  authenticatorData: z.string(),
+  clientData: z.string(),
+  signature: z.string(),
   domain: z.string(),
 });
 
@@ -90,6 +100,78 @@ export class PasswordlessServerService {
 
     return {
       id: createdUser.id,
+    };
+  }
+
+  @CatchZodError()
+  @ValidateParams(GetSigninParams)
+  async signin(authentication: z.infer<typeof GetSigninParams>) {
+    const key = KvService.getKey({
+      type: "authentication",
+      userId: authentication.username,
+      domain: authentication.domain,
+    });
+    if (!this.kvService.exists(key)) {
+      return NextResponse.json(
+        {
+          error: "No registration session found",
+          solution:
+            "Make sure you have a valid registration session before calling this endpoint. You can try to call /api/challenge to get a valid registration session.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const storedSession = await this.kvService.get(key);
+    const sessionSchema = z.object({
+      challenge: z.string({ description: "The challenge string" }),
+    });
+    let session: z.infer<typeof sessionSchema>;
+
+    // If a session is found, the method attempts to parse the session data
+    // using the sessionSchema object defined in the code block.
+    // If the parsing fails, the method deletes the session from Redis and throws the error.
+    try {
+      session = sessionSchema.parse(storedSession);
+    } catch (e) {
+      await this.kvService.del(key);
+      throw e;
+    }
+
+    const user = await this.databaseService.getUser(
+      authentication.username,
+      authentication.domain
+    );
+
+    await this.webauthnService.verifyAuthentication(
+      {
+        credentialId: authentication.credential,
+        authenticatorData: authentication.authenticatorData,
+        clientData: authentication.clientData,
+        signature: authentication.signature,
+      },
+      {
+        ...user.Credential!,
+      },
+      {
+        challenge: session.challenge,
+        counter: -1,
+        origin: authentication.domain,
+        userVerified: true,
+      }
+    );
+
+    const sessionId = uid(32);
+    await this.kvService.set(
+      sessionId,
+      JSON.stringify({
+        id: user.id,
+        domain: user.domain,
+      })
+    );
+
+    return {
+      sessionId,
     };
   }
 }

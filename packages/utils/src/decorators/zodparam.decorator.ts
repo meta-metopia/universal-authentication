@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export function ValidateParams(
-  schema: z.AnyZodObject | z.AnyZodObject[] | any[]
+  schema: z.AnyZodObject | z.AnyZodObject[] | any[] | any
 ) {
   return function (
     target: any,
