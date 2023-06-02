@@ -174,4 +174,27 @@ export class PasswordlessServerService {
       sessionId,
     };
   }
+
+  @CatchZodError()
+  @ValidateParams([
+    z.string({ description: "userId" }).nonempty(),
+    z.string({ description: "domain" }).nonempty(),
+  ])
+  async prepareSignIn(username: string, domain: string) {
+    const user = await this.databaseService.getUser(username, domain);
+    if (!user.Credential) {
+      return NextResponse.json(
+        {
+          error: "No credential found",
+          solution:
+            "Make sure you have a valid credential before calling this endpoint. You can try to call /api/signup to get a valid credential.",
+        },
+        { status: 400 }
+      );
+    }
+
+    return {
+      id: user.Credential!.id,
+    };
+  }
 }

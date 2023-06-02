@@ -18,9 +18,10 @@ model User {
   id         Int         @id @default(autoincrement())
   username   String
   domainId   Int
-  domain     Domain      @relation(fields: [domainId], references: [id])
+  domain     Domain      @relation(fields: [domainId], references: [id], onDelete: Cascade)
   Credential Credential?
 
+  @@unique([username, domainId])
   @@index([domainId])
 }
 
@@ -29,7 +30,7 @@ model Credential {
   publicKey String // Public key used for authentication
   algorithm String // Algorithm used for authentication
   userId    Int    @unique // Foreign key to the User model
-  user      User   @relation(fields: [userId], references: [id]) // Relation to the User model
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade) // Relation to the User model
 
   @@index([userId])
 }

@@ -20,6 +20,20 @@ export class AuthenticationController {
   }
 
   @Get()
+  static async PrepareSignIn(request: Request) {
+    const { origin, searchParams } = new URL(request.url);
+    const domain: any = origin;
+    const userId = searchParams.get("userId")!;
+
+    const response = await new PasswordlessServerService().prepareSignIn(
+      userId,
+      domain
+    );
+
+    return response;
+  }
+
+  @Post()
   static async signIn(request: Request) {
     const { origin } = new URL(request.url);
     const domain: any = origin;
