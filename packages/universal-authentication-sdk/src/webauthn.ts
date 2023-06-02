@@ -1,12 +1,55 @@
-import { AuthenticationInterface, OnSignUpSchema } from "./types";
+import {
+  AuthenticationInterface,
+  OnSignInSchema,
+  OnSignUpSchema,
+} from "./types";
 import { z } from "zod";
 import { ValidateParams } from "utils";
 import { client } from "@passwordless-id/webauthn";
+import axios from "axios";
+import { on } from "events";
 
-const CredentialSchema = z.object({
-  id: z.string(),
-  publicKey: z.string(),
-  algorithm: z.enum(["RS256", "ES256"]),
+const SignInParamsSchema = z.object({
+  username: z.string(),
+  getCredentialId: z.function(
+    z.tuple([z.string()]),
+    z.promise(
+      z.object({
+        credentialId: z.string(),
+        error: z.string().optional(),
+      })
+    )
+  ),
+  challenge: z.function(
+    z.tuple([z.string()]),
+    z.promise(
+      z.object({
+        challenge: z.string(),
+        error: z.string().optional(),
+      })
+    )
+  ),
+  onSendSignIn: z.function(
+    z.tuple([
+      z.object({
+        credential: z.object({
+          credentialId: z.string(),
+          authenticatorData: z.string(),
+          clientData: z.string(),
+          signature: z.string(),
+        }),
+        challenge: z.string(),
+      }),
+    ]),
+    z.promise(
+      z.object({
+        session: z.object({
+          id: z.string(),
+        }),
+        error: z.string().optional(),
+      })
+    )
+  ),
 });
 
 const SignupResponseSchema = z.object({
@@ -45,6 +88,108 @@ const SignupParamsSchema = z.object({
 type SignupResponse = z.infer<typeof SignupResponseSchema>;
 
 export class WebAuthnAuthentication implements AuthenticationInterface {
+  @ValidateParams([SignInParamsSchema, OnSignInSchema])
+  async signIn(
+    {
+      username,
+      getCredentialId,
+      onSendSignIn,
+      challenge,
+    }: z.infer<typeof SignInParamsSchema>,
+    onSignIn: (args_0: {
+      message: string;
+      status: "error" | "progress" | "success";
+      error?: string | undefined;
+    }) => Promise<void>
+  ): Promise<{ sessionId: string }> {
+    await onSignIn({
+      message: "start-getting-credential-id",
+      status: "progress",
+    });
+
+    const credentialIdResponse = await getCredentialId(username);
+    if (credentialIdResponse.error) {
+      await onSignIn({
+        message: "error-getting-credential-id",
+        status: "error",
+        error: `${credentialIdResponse.error}`,
+      });
+      throw credentialIdResponse.error;
+    }
+
+    await onSignIn({
+      message: "end-getting-credential-id",
+      status: "progress",
+    });
+
+    await onSignIn({
+      message: "start-generating-challenge-request",
+      status: "progress",
+    });
+    const challengeResponse = await challenge(username);
+    if (challengeResponse.error) {
+      await onSignIn({
+        message: "error-generating-challenge",
+        status: "error",
+        error: `${challengeResponse.error}`,
+      });
+      throw challengeResponse.error;
+    }
+
+    await onSignIn({
+      message: "end-generating-challenge-request",
+      status: "progress",
+    });
+
+    await onSignIn({
+      message: "start-client-side-signing",
+      status: "progress",
+    });
+
+    const credentialResponse = await this.authenticate({
+      challenge: challengeResponse.challenge,
+      id: credentialIdResponse.credentialId,
+    });
+    if (credentialResponse.error) {
+      await onSignIn({
+        message: "error-client-side-signing",
+        status: "error",
+        error: `${credentialResponse.error}`,
+      });
+      throw credentialResponse.error;
+    }
+    await onSignIn({
+      message: "end-client-side-signing",
+      status: "progress",
+    });
+
+    await onSignIn({
+      message: "start-sending-sign-in-request",
+      status: "progress",
+    });
+
+    const sessionResponse = await onSendSignIn({
+      credential: credentialResponse.authentication!,
+      challenge: challengeResponse.challenge,
+    });
+    if (sessionResponse.error) {
+      await onSignIn({
+        message: "error-sending-sign-in-request",
+        status: "error",
+        error: `${sessionResponse.error}`,
+      });
+      throw sessionResponse.error;
+    }
+
+    await onSignIn({
+      message: "end-sending-sign-in-request",
+      status: "progress",
+    });
+    return {
+      sessionId: sessionResponse.session.id,
+    };
+  }
+
   @ValidateParams([SignupParamsSchema, OnSignUpSchema])
   async signUp(
     {
@@ -151,6 +296,21 @@ export class WebAuthnAuthentication implements AuthenticationInterface {
       return { registration, error: null };
     } catch (err) {
       return { registration: null, error: err };
+    }
+  }
+
+  private async authenticate({
+    challenge,
+    id,
+  }: {
+    challenge: string;
+    id: string;
+  }) {
+    try {
+      const authentication = await client.authenticate([id], challenge);
+      return { authentication, error: null };
+    } catch (err) {
+      return { authentication: null, error: err };
     }
   }
 }
